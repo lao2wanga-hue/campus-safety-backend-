@@ -6,7 +6,7 @@
 ## 技术栈
 - 后端：Spring Boot 3 + JDK 21 + MyBatis Plus
 - 前端：Vue 3 + Vite + Element Plus
-- 数据库：MySQL 8.0
+- 数据库：MySQL 9.6.0
 
 ## 功能模块
 - 隐患上报
