@@ -1,28 +1,6 @@
-server:
-  port: ${PORT:8080}
-
+# 激活的配置
 spring:
-  datasource:
-    url: ${MYSQL_URL}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-
-jwt:
-  secret: ${JWT_SECRET:campusSafetySecretKey2024}
-  expiration: 86400000
-
-cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
-
-# 健康检查
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  application:
+    name: campus-safety-backend
