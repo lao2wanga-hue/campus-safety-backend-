@@ -1,200 +1,172 @@
 package com.campus.safety.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.campus.safety.dto.HazardDetailDTO;
-import com.campus.safety.dto.HazardLogDTO;
-import com.campus.safety.dto.HazardReportDTO;
-import com.campus.safety.dto.HazardStatsDTO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.campus.safety.dto.HazardDTO;
+import com.campus.safety.dto.HazardUpdateDTO;
 import com.campus.safety.entity.Hazard;
-import com.campus.safety.entity.HazardLog;
+import com.campus.safety.entity.HazardRecord;
 import com.campus.safety.entity.User;
+import com.campus.safety.exception.BusinessException;
 import com.campus.safety.mapper.HazardMapper;
-import com.campus.safety.service.HazardLogService;
+import com.campus.safety.mapper.HazardRecordMapper;
+import com.campus.safety.mapper.UserMapper;
 import com.campus.safety.service.HazardService;
-import com.campus.safety.service.UserService;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.campus.safety.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
-public class HazardServiceImpl extends ServiceImpl<HazardMapper, Hazard> implements HazardService {
-
-    @Autowired
-    private HazardLogService hazardLogService;
-
-    @Autowired
-    private UserService userService;
-
+@RequiredArgsConstructor
+public class HazardServiceImpl implements HazardService {
+    
+    private final HazardMapper hazardMapper;
+    private final HazardRecordMapper hazardRecordMapper;
+    private final UserMapper userMapper;
+    private final JwtUtil jwtUtil;
+    
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void reportHazard(HazardReportDTO dto, Long userId) {
-        if (dto == null || userId == null) {
-            throw new IllegalArgumentException("参数不能为空");
-        }
+    public void create(HazardDTO dto) {
+        Long userId = jwtUtil.getCurrentUserId();
+        User user = userMapper.selectById(userId);
         
         Hazard hazard = new Hazard();
-        BeanUtils.copyProperties(dto, hazard);
-        hazard.setReporterId(userId);
+        hazard.setTitle(dto.getTitle());
+        hazard.setDescription(dto.getDescription());
+        hazard.setLocation(dto.getLocation());
+        hazard.setLevel(dto.getLevel());
         hazard.setStatus("PENDING");
-        hazard.setLevel(dto.getLevel() != null ? dto.getLevel() : "NORMAL");
+        hazard.setReporterId(userId);
+        hazard.setReporterName(user.getRealName());
+        hazard.setImages(dto.getImages());
         
-        boolean saved = this.save(hazard);
-        if (!saved) {
-            throw new RuntimeException("隐患上报失败");
-        }
+        hazardMapper.insert(hazard);
         
-        hazardLogService.saveLog(hazard.getId(), userId, "上报隐患：" + dto.getTitle(), "REPORT");
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(hazard.getId());
+        record.setOperatorId(userId);
+        record.setOperatorName(user.getRealName());
+        record.setAction("CREATE");
+        record.setContent("创建隐患：" + dto.getTitle());
+        hazardRecordMapper.insert(record);
     }
-
+    
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void assignHazard(Long hazardId, Long rectifierId, Long operatorId, String comment) {
-        if (hazardId == null || rectifierId == null || operatorId == null) {
-            throw new IllegalArgumentException("参数不能为空");
-        }
-        
-        Hazard hazard = this.getById(hazardId);
+    public void update(Long id, HazardUpdateDTO dto) {
+        Hazard hazard = hazardMapper.selectById(id);
         if (hazard == null) {
-            throw new RuntimeException("隐患不存在，ID: " + hazardId);
+            throw new BusinessException("隐患不存在");
         }
         
-        hazard.setRectifierId(rectifierId);
-        hazard.setStatus("ASSIGNED");
+        Long userId = jwtUtil.getCurrentUserId();
+        User user = userMapper.selectById(userId);
         
-        boolean updated = this.updateById(hazard);
-        if (!updated) {
-            throw new RuntimeException("分配任务失败");
+        if (dto.getStatus() != null) {
+            hazard.setStatus(dto.getStatus());
+        }
+        if (dto.getResolution() != null) {
+            hazard.setResolution(dto.getResolution());
+            hazard.setResolvedAt(LocalDateTime.now());
+        }
+        if (dto.getHandlerId() != null) {
+            hazard.setHandlerId(dto.getHandlerId());
+            User handler = userMapper.selectById(dto.getHandlerId());
+            hazard.setHandlerName(handler != null ? handler.getRealName() : null);
         }
         
-        String logContent = comment != null && !comment.trim().isEmpty() ? comment : "分配整改任务";
-        hazardLogService.saveLog(hazardId, operatorId, logContent, "ASSIGN");
+        hazardMapper.updateById(hazard);
+        
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(userId);
+        record.setOperatorName(user.getRealName());
+        record.setAction("UPDATE");
+        record.setContent("更新隐患状态");
+        hazardRecordMapper.insert(record);
     }
-
+    
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void updateStatus(Long hazardId, String status, String comment, Long userId) {
-        if (hazardId == null || status == null || userId == null) {
-            throw new IllegalArgumentException("参数不能为空");
-        }
-        
-        Hazard hazard = this.getById(hazardId);
-        if (hazard == null) {
-            throw new RuntimeException("隐患不存在，ID: " + hazardId);
-        }
-        
-        hazard.setStatus(status);
-        
-        boolean updated = this.updateById(hazard);
-        if (!updated) {
-            throw new RuntimeException("更新状态失败");
-        }
-        
-        String logContent = comment != null && !comment.trim().isEmpty() ? comment : "状态更新为：" + status;
-        hazardLogService.saveLog(hazardId, userId, logContent, status);
+    public void assign(Long id, Long handlerId) {
+        HazardUpdateDTO dto = new HazardUpdateDTO();
+        dto.setStatus("PROCESSING");
+        dto.setHandlerId(handlerId);
+        update(id, dto);
     }
-
+    
     @Override
-    public HazardDetailDTO getDetail(Long hazardId) {
-        if (hazardId == null) {
-            throw new IllegalArgumentException("隐患 ID 不能为空");
-        }
-        
-        Hazard hazard = this.getById(hazardId);
-        if (hazard == null) {
-            throw new RuntimeException("隐患不存在，ID: " + hazardId);
-        }
-        
-        HazardDetailDTO dto = new HazardDetailDTO();
-        BeanUtils.copyProperties(hazard, dto);
-        
-        // 获取上报人信息
-        if (hazard.getReporterId() != null) {
-            User reporter = userService.getById(hazard.getReporterId());
-            dto.setReporterName(reporter != null ? reporter.getRealName() : "未知");
-        } else {
-            dto.setReporterName("未知");
-        }
-        
-        // 获取整改人信息
-        if (hazard.getRectifierId() != null) {
-            User rectifier = userService.getById(hazard.getRectifierId());
-            dto.setRectifierName(rectifier != null ? rectifier.getRealName() : "未分配");
-        } else {
-            dto.setRectifierName("未分配");
-        }
-        
-        // 获取日志列表
-        List<HazardLog> logs = hazardLogService.getByHazardId(hazardId);
-        List<HazardLogDTO> logDTOs = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(logs)) {
-            logDTOs = logs.stream().map(log -> {
-                HazardLogDTO logDTO = new HazardLogDTO();
-                BeanUtils.copyProperties(log, logDTO);
-                
-                if (log.getUserId() != null) {
-                    User user = userService.getById(log.getUserId());
-                    logDTO.setUserName(user != null ? user.getRealName() : "未知");
-                } else {
-                    logDTO.setUserName("未知");
-                }
-                
-                return logDTO;
-            }).collect(Collectors.toList());
-        }
-        dto.setLogs(logDTOs);
-        
-        return dto;
+    public void resolve(Long id, String resolution) {
+        HazardUpdateDTO dto = new HazardUpdateDTO();
+        dto.setStatus("RESOLVED");
+        dto.setResolution(resolution);
+        update(id, dto);
     }
-
+    
     @Override
-    public HazardStatsDTO getStatistics() {
-        HazardStatsDTO stats = new HazardStatsDTO();
+    public void close(Long id) {
+        HazardUpdateDTO dto = new HazardUpdateDTO();
+        dto.setStatus("CLOSED");
+        update(id, dto);
+    }
+    
+    @Override
+    public Hazard getById(Long id) {
+        return hazardMapper.selectById(id);
+    }
+    
+    @Override
+    public List<Hazard> getList(String status, String level, Integer page, Integer size) {
+        LambdaQueryWrapper<Hazard> wrapper = new LambdaQueryWrapper<>();
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(Hazard::getStatus, status);
+        }
+        if (level != null && !level.isEmpty()) {
+            wrapper.eq(Hazard::getLevel, level);
+        }
+        wrapper.orderByDesc(Hazard::getCreatedAt);
         
-        // 总数
-        stats.setTotal(this.count());
-        
-        // 待处理
-        LambdaQueryWrapper<Hazard> pendingWrapper = new LambdaQueryWrapper<>();
-        pendingWrapper.eq(Hazard::getStatus, "PENDING");
-        stats.setPending(this.count(pendingWrapper));
-        
-        // 已分配
-        LambdaQueryWrapper<Hazard> assignedWrapper = new LambdaQueryWrapper<>();
-        assignedWrapper.eq(Hazard::getStatus, "ASSIGNED");
-        stats.setAssigned(this.count(assignedWrapper));
-        
-        // 整改中
-        LambdaQueryWrapper<Hazard> rectifyingWrapper = new LambdaQueryWrapper<>();
-        rectifyingWrapper.eq(Hazard::getStatus, "RECTIFYING");
-        stats.setRectifying(this.count(rectifyingWrapper));
-        
-        // 已完成
-        LambdaQueryWrapper<Hazard> completedWrapper = new LambdaQueryWrapper<>();
-        completedWrapper.eq(Hazard::getStatus, "COMPLETED");
-        stats.setCompleted(this.count(completedWrapper));
-        
-        // 已拒绝
-        LambdaQueryWrapper<Hazard> rejectedWrapper = new LambdaQueryWrapper<>();
-        rejectedWrapper.eq(Hazard::getStatus, "REJECTED");
-        stats.setRejected(this.count(rejectedWrapper));
-        
+        if (page != null && size != null) {
+            Page<Hazard> hazardPage = new Page<>(page, size);
+            return hazardMapper.selectPage(hazardPage, wrapper).getRecords();
+        }
+        return hazardMapper.selectList(wrapper);
+    }
+    
+    @Override
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("total", hazardMapper.countTotal());
+        stats.put("pending", hazardMapper.countPending());
+        stats.put("processing", hazardMapper.countProcessing());
+        stats.put("resolved", hazardMapper.countResolved());
+        stats.put("byLevel", hazardMapper.countByLevel());
+        stats.put("byDate", hazardMapper.countByDate());
         return stats;
     }
-
+    
     @Override
-    public List<Hazard> listByStatus(String status) {
+    public List<Hazard> getMyReports(Long userId) {
         LambdaQueryWrapper<Hazard> wrapper = new LambdaQueryWrapper<>();
-        if (status != null && !status.trim().isEmpty()) {
-            wrapper.eq(Hazard::getStatus, status.trim());
-        }
-        wrapper.orderByDesc(Hazard::getCreateTime);
-        return this.list(wrapper);
+        wrapper.eq(Hazard::getReporterId, userId);
+        wrapper.orderByDesc(Hazard::getCreatedAt);
+        return hazardMapper.selectList(wrapper);
+    }
+    
+    @Override
+    public List<Hazard> getMyTasks(Long userId) {
+        LambdaQueryWrapper<Hazard> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Hazard::getHandlerId, userId);
+        wrapper.ne(Hazard::getStatus, "CLOSED");
+        wrapper.orderByDesc(Hazard::getCreatedAt);
+        return hazardMapper.selectList(wrapper);
     }
 }

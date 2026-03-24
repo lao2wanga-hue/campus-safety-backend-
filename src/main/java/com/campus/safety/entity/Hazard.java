@@ -5,30 +5,37 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("safety_hazard")
+@TableName("hazard")
 public class Hazard {
+    
     @TableId(type = IdType.AUTO)
     private Long id;
     
     private String title;
     
-    private String location;
-    
     private String description;
     
-    private String imageUrl;
+    private String location;
     
-    private String level; // NORMAL, HIGH, URGENT
+    private String level;
     
-    private String status; // PENDING, ASSIGNED, RECTIFYING, COMPLETED, REJECTED
+    private String status;
     
     private Long reporterId;
     
-    private Long rectifierId;
+    private String reporterName;
     
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    private Long handlerId;
     
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+    private String handlerName;
+    
+    private String images;
+    
+    private LocalDateTime createdAt;
+    
+    private LocalDateTime updatedAt;
+    
+    private LocalDateTime resolvedAt;
+    
+    private String resolution;
 }

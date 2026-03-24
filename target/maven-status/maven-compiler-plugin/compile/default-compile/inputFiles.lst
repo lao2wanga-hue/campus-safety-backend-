@@ -6,7 +6,9 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\util\JwtUtil.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\UserMapper.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\User.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardLogDTO.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\entity\HazardRecord.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\HazardMapper.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardUpdateDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\HazardLog.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\WebMvcConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\controller\HazardController.java
@@ -18,11 +20,13 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\common\Result.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\controller\UserController.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\HazardService.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\interceptor\JwtInterceptor.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\HazardRecordMapper.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\LoginResponseDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\exception\GlobalExceptionHandler.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\Hazard.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\UserService.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\HazardLogMapper.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\SecurityConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\impl\HazardServiceImpl.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\StatusUpdateDTO.java

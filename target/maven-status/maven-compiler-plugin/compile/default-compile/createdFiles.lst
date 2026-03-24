@@ -4,9 +4,11 @@ com\campus\safety\exception\GlobalExceptionHandler.class
 com\campus\safety\dto\LoginDTO.class
 com\campus\safety\entity\Hazard.class
 com\campus\safety\config\CorsConfig.class
+com\campus\safety\mapper\HazardRecordMapper.class
 com\campus\safety\service\impl\UserServiceImpl.class
 com\campus\safety\config\JwtConfig.class
 com\campus\safety\dto\HazardReportDTO.class
+com\campus\safety\dto\HazardDTO.class
 com\campus\safety\util\JwtUtil.class
 com\campus\safety\SafetyApplication.class
 com\campus\safety\dto\RegisterDTO.class
@@ -19,6 +21,7 @@ com\campus\safety\dto\HazardLogDTO.class
 com\campus\safety\service\UserService.class
 com\campus\safety\config\Knife4jConfig.class
 com\campus\safety\entity\User.class
+com\campus\safety\dto\HazardUpdateDTO.class
 com\campus\safety\service\impl\HazardLogServiceImpl.class
 com\campus\safety\controller\UserController.class
 com\campus\safety\dto\AssignDTO.class
@@ -33,3 +36,4 @@ com\campus\safety\controller\HazardController.class
 com\campus\safety\dto\HazardStatsDTO.class
 com\campus\safety\interceptor\JwtInterceptor.class
 com\campus\safety\mapper\UserMapper.class
+com\campus\safety\entity\HazardRecord.class

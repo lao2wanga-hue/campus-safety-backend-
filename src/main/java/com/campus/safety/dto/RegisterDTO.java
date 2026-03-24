@@ -2,7 +2,7 @@ package com.campus.safety.dto;
 
 import lombok.Data;
 
-// ⭐ 使用 jakarta.validation 而不是 javax.validation
+// ⭐ 使用 jakarta.validation 而不是 jakarta.validation
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

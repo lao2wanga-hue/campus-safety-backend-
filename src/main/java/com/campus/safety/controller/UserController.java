@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-// ⭐ 使用 jakarta.validation 而不是 javax.validation
+// ⭐ 使用 jakarta.validation 而不是 jakarta.validation
 import jakarta.validation.Valid;
 
 @RestController
