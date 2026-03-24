@@ -7,7 +7,6 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\UserMapper.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\User.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardLogDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\HazardMapper.java
-E:\xiangmu\backend\src\main\java\com\campus\safety\common\GlobalExceptionHandler.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\HazardLog.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\WebMvcConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\controller\HazardController.java

@@ -20,7 +20,6 @@ com\campus\safety\service\UserService.class
 com\campus\safety\config\Knife4jConfig.class
 com\campus\safety\entity\User.class
 com\campus\safety\service\impl\HazardLogServiceImpl.class
-com\campus\safety\common\GlobalExceptionHandler.class
 com\campus\safety\controller\UserController.class
 com\campus\safety\dto\AssignDTO.class
 com\campus\safety\service\HazardLogService.class
