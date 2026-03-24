@@ -2,35 +2,39 @@ package com.campus.safety.common;
 
 import lombok.Data;
 
+/**
+ * 统一返回结果
+ */
 @Data
 public class Result<T> {
-    private int code;
+    
+    private Integer code;
     private String message;
     private T data;
-
+    
     public static <T> Result<T> success(T data) {
-        Result<T> r = new Result<>();
-        r.setCode(200);
-        r.setMessage("success");
-        r.setData(data);
-        return r;
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(data);
+        return result;
     }
-
+    
     public static <T> Result<T> success() {
         return success(null);
     }
-
-    public static <T> Result<T> error(String msg) {
-        Result<T> r = new Result<>();
-        r.setCode(500);
-        r.setMessage(msg);
-        return r;
+    
+    public static <T> Result<T> error(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(500);
+        result.setMessage(message);
+        return result;
     }
-
-    public static <T> Result<T> error(int code, String msg) {
-        Result<T> r = new Result<>();
-        r.setCode(code);
-        r.setMessage(msg);
-        return r;
+    
+    public static <T> Result<T> error(Integer code, String message) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMessage(message);
+        return result;
     }
 }

@@ -1,51 +1,39 @@
 package com.campus.safety.interceptor;
 
+import com.campus.safety.exception.BusinessException;
 import com.campus.safety.util.JwtUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 @Component
+@RequiredArgsConstructor
 public class JwtInterceptor implements HandlerInterceptor {
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
+    
+    private final JwtUtil jwtUtil;
+    
     @Override
-    public boolean preHandle(HttpServletRequest request, 
-                            HttpServletResponse response, 
-                            Object handler) {
-        // 登录接口不需要 token
-        if ("/api/user/login".equals(request.getRequestURI()) ||
-            "/api/user/register".equals(request.getRequestURI())) {
-            return true;
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        // 获取 Token
+        String authorization = request.getHeader("Authorization");
+        String token = jwtUtil.getTokenFromHeader(authorization);
+        
+        if (token == null || !jwtUtil.validateToken(token)) {
+            throw new BusinessException(401, "未登录或登录已过期");
         }
         
-        // 文档接口不需要 token
-        if ("/doc.html".equals(request.getRequestURI()) || 
-            request.getRequestURI().startsWith("/v3/") || 
-            request.getRequestURI().startsWith("/swagger-ui")) {
-            return true;
-        }
-
-        String token = request.getHeader("Authorization");
-        if (token == null || !token.startsWith("Bearer ")) {
-            response.setStatus(401);
-            return false;
-        }
-        
-        token = token.substring(7);
-        if (jwtUtil.isTokenExpired(token)) {
-            response.setStatus(401);
-            return false;
-        }
-        
+        // 从 Token 中获取用户信息
         Long userId = jwtUtil.getUserIdFromToken(token);
+        String username = jwtUtil.getUsernameFromToken(token);
+        String role = jwtUtil.getRoleFromToken(token);
+        
+        // ⭐ 将用户信息设置到请求属性中
         request.setAttribute("userId", userId);
-        request.setAttribute("username", jwtUtil.getUsernameFromToken(token));
-        request.setAttribute("role", jwtUtil.getRoleFromToken(token));
+        request.setAttribute("username", username);
+        request.setAttribute("role", role);
         
         return true;
     }

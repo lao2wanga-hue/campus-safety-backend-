@@ -1,5 +1,6 @@
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\CorsConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\SafetyApplication.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\exception\BusinessException.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\AssignDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\util\JwtUtil.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\UserMapper.java
@@ -19,14 +20,17 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\controller\UserController.jav
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\HazardService.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\interceptor\JwtInterceptor.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\LoginResponseDTO.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\exception\GlobalExceptionHandler.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\Hazard.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\UserService.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\HazardLogMapper.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\config\SecurityConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\impl\HazardServiceImpl.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\StatusUpdateDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\Knife4jConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\MyBatisPlusConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardStatsDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\impl\UserServiceImpl.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\dto\RegisterDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\impl\HazardLogServiceImpl.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\service\HazardLogService.java

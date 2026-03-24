@@ -1,5 +1,6 @@
 com\campus\safety\common\Result.class
 com\campus\safety\dto\LoginResponseDTO.class
+com\campus\safety\exception\GlobalExceptionHandler.class
 com\campus\safety\dto\LoginDTO.class
 com\campus\safety\entity\Hazard.class
 com\campus\safety\config\CorsConfig.class
@@ -8,9 +9,11 @@ com\campus\safety\config\JwtConfig.class
 com\campus\safety\dto\HazardReportDTO.class
 com\campus\safety\util\JwtUtil.class
 com\campus\safety\SafetyApplication.class
+com\campus\safety\dto\RegisterDTO.class
 com\campus\safety\dto\StatusUpdateDTO.class
 com\campus\safety\mapper\HazardMapper.class
 com\campus\safety\config\WebMvcConfig.class
+com\campus\safety\config\SecurityConfig.class
 com\campus\safety\config\MyBatisPlusConfig.class
 com\campus\safety\dto\HazardLogDTO.class
 com\campus\safety\service\UserService.class
@@ -21,6 +24,7 @@ com\campus\safety\common\GlobalExceptionHandler.class
 com\campus\safety\controller\UserController.class
 com\campus\safety\dto\AssignDTO.class
 com\campus\safety\service\HazardLogService.class
+com\campus\safety\exception\BusinessException.class
 com\campus\safety\service\HazardService.class
 com\campus\safety\service\impl\HazardServiceImpl.class
 com\campus\safety\dto\HazardDetailDTO.class
