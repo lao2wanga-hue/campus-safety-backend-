@@ -9,6 +9,7 @@ import com.campus.safety.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,7 @@ public class HazardController {
     private final HazardService hazardService;
     private final JwtUtil jwtUtil;
     
-    @PostMapping
+    @RequestMapping
     public Result<Void> create(@RequestBody @Validated HazardDTO dto) {
         hazardService.create(dto);
         return Result.success();
@@ -34,19 +35,19 @@ public class HazardController {
         return Result.success();
     }
     
-    @PostMapping("/{id}/assign")
+    @RequestMapping("/{id}/assign")
     public Result<Void> assign(@PathVariable Long id, @RequestParam Long handlerId) {
         hazardService.assign(id, handlerId);
         return Result.success();
     }
     
-    @PostMapping("/{id}/resolve")
+    @RequestMapping("/{id}/resolve")
     public Result<Void> resolve(@PathVariable Long id, @RequestParam String resolution) {
         hazardService.resolve(id, resolution);
         return Result.success();
     }
     
-    @PostMapping("/{id}/close")
+    @RequestMapping("/{id}/close")
     public Result<Void> close(@PathVariable Long id) {
         hazardService.close(id);
         return Result.success();

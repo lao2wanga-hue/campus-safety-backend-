@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 @RestController
 @RequestMapping("/api/user")
@@ -25,7 +26,7 @@ public class UserController {
     /**
      * 用户登录
      */
-    @PostMapping("/login")
+    @RequestMapping("/login")
     public Result<?> login(@Valid @RequestBody LoginDTO loginDTO) {
         return Result.success(userService.login(loginDTO));
     }
@@ -33,7 +34,7 @@ public class UserController {
     /**
      * 用户注册
      */
-    @PostMapping("/register")
+    @RequestMapping("/register")
     public Result<?> register(@Valid @RequestBody RegisterDTO registerDTO) {
         userService.register(registerDTO);
         return Result.success("注册成功");
@@ -56,10 +57,10 @@ public class UserController {
     }
     
     /**
-     * ⭐ 临时接口：修复 admin 密码（部署后访问一次即可）
+     * ⭐ 临时接口：修复 admin 密码
      */
-    @PostMapping("/fix-admin-password")
-    public Result<Void> fixAdminPassword() {
+    @RequestMapping("/fix-admin-password")
+    public Result<?> fixAdminPassword() {
         try {
             User admin = userMapper.selectByUsername("admin");
             
@@ -88,36 +89,36 @@ public class UserController {
     /**
      * ⭐ 临时接口：创建 admin 用户（如果不存在）
      */
-   @PostMapping("/create-admin-if-not-exists")
-public Result<?> createAdminIfNotExists() {  // ⭐ 改为 Result<?>
-    try {
-        User existing = userMapper.selectByUsername("admin");
-        
-        if (existing == null) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("123456"));
-            admin.setRealName("系统管理员");
-            admin.setRole("ADMIN");
-            userMapper.insert(admin);
-            System.out.println("admin 用户已创建成功");
-            return Result.success();
+    @RequestMapping("/create-admin-if-not-exists")
+    public Result<?> createAdminIfNotExists() {
+        try {
+            User existing = userMapper.selectByUsername("admin");
+            
+            if (existing == null) {
+                User admin = new User();
+                admin.setUsername("admin");
+                admin.setPassword(passwordEncoder.encode("123456"));
+                admin.setRealName("系统管理员");
+                admin.setRole("ADMIN");
+                userMapper.insert(admin);
+                System.out.println("admin 用户已创建成功");
+                return Result.success();
+            }
+            
+            System.out.println("admin 用户已存在");
+            return Result.success("用户已存在");
+        } catch (Exception e) {
+            System.err.println("创建 admin 失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("创建失败: " + e.getMessage());
         }
-        
-        System.out.println("admin 用户已存在");
-        return Result.success("用户已存在");  // ✅ 现在可以返回 String
-    } catch (Exception e) {
-        System.err.println("创建 admin 失败: " + e.getMessage());
-        e.printStackTrace();
-        return Result.error("创建失败: " + e.getMessage());
     }
-}
     
     /**
      * ⭐ 临时接口：修复所有用户密码
      */
-    @PostMapping("/fix-all-user-passwords")
-    public Result<Void> fixAllUserPasswords() {
+    @RequestMapping("/fix-all-user-passwords")
+    public Result<?> fixAllUserPasswords() {
         try {
             String encodedPassword = passwordEncoder.encode("123456");
             System.out.println("=== 修复所有用户密码 ===");
