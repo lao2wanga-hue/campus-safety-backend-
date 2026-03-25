@@ -24,8 +24,6 @@ public class HazardController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     
-    // ========== 原有接口保持不变 ==========
-    
     @PostMapping
     public Result<Void> create(@RequestBody @Validated HazardDTO dto) {
         hazardService.create(dto);
@@ -35,6 +33,16 @@ public class HazardController {
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody HazardUpdateDTO dto) {
         hazardService.update(id, dto);
+        return Result.success();
+    }
+    
+    /**
+     * ⭐ 更新隐患等级（仅管理员）
+     */
+    @PutMapping("/{id}/level")
+    public Result<Void> updateLevel(@PathVariable Long id, @RequestBody Map<String, String> params) {
+        String level = params.get("level");
+        hazardService.updateLevel(id, level);
         return Result.success();
     }
     
@@ -87,36 +95,22 @@ public class HazardController {
         return Result.success(hazardService.getMyTasks(userId));
     }
     
-    // ========== 新增接口 ==========
-    
-    /**
-     * ⭐ 获取维修员列表（RECTIFIER 角色）
-     */
     @GetMapping("/rectifiers")
     public Result<List<User>> getRectifiers() {
         return Result.success(hazardService.getRectifiers());
     }
     
-    /**
-     * ⭐ 获取处理中的隐患列表
-     */
     @GetMapping("/processing")
     public Result<List<Hazard>> getProcessingHazards() {
         return Result.success(hazardService.getProcessingHazards());
     }
     
-    /**
-     * ⭐ 完成修理（将 PROCESSING 转为 RESOLVED）
-     */
     @PostMapping("/{id}/complete")
     public Result<Void> completeRepair(@PathVariable Long id) {
         hazardService.completeRepair(id);
         return Result.success();
     }
     
-    /**
-     * ⭐ 删除隐患（管理员权限）
-     */
     @DeleteMapping("/{id}")
     public Result<Void> deleteHazard(@PathVariable Long id) {
         hazardService.deleteHazard(id);

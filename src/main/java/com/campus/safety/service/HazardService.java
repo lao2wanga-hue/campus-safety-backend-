@@ -25,4 +25,9 @@ public interface HazardService {
     List<Hazard> getProcessingHazards();
     void completeRepair(Long id);
     void deleteHazard(Long id);
+    
+    /**
+     * ⭐ 更新隐患等级（仅管理员）
+     */
+    void updateLevel(Long id, String level);
 }

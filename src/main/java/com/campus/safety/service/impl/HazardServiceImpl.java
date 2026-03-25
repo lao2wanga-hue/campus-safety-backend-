@@ -209,9 +209,6 @@ public class HazardServiceImpl implements HazardService {
     
     // ========== 新增方法 ==========
     
-    /**
-     * ⭐ 获取维修员列表
-     */
     @Override
     public List<User> getRectifiers() {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -219,9 +216,6 @@ public class HazardServiceImpl implements HazardService {
         return userMapper.selectList(wrapper);
     }
     
-    /**
-     * ⭐ 获取处理中的隐患列表
-     */
     @Override
     public List<Hazard> getProcessingHazards() {
         LambdaQueryWrapper<Hazard> wrapper = new LambdaQueryWrapper<>();
@@ -230,9 +224,6 @@ public class HazardServiceImpl implements HazardService {
         return hazardMapper.selectList(wrapper);
     }
     
-    /**
-     * ⭐ 完成修理（维修员将 PROCESSING 转为 RESOLVED）
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void completeRepair(Long id) {
@@ -275,9 +266,6 @@ public class HazardServiceImpl implements HazardService {
         hazardRecordMapper.insert(record);
     }
     
-    /**
-     * ⭐ 删除隐患（管理员权限）
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteHazard(Long id) {
@@ -303,6 +291,48 @@ public class HazardServiceImpl implements HazardService {
         record.setOperatorName(currentUser.getRealName());
         record.setAction("DELETE");
         record.setContent("删除隐患：" + hazard.getTitle());
+        hazardRecordMapper.insert(record);
+    }
+    
+    /**
+     * ⭐ 更新隐患等级（仅管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateLevel(Long id, String level) {
+        // ⭐ 权限验证 - 只有管理员可以调整等级
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+        
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new BusinessException("只有管理员可以调整隐患等级");
+        }
+        
+        // 验证隐患存在
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        // 验证等级有效性
+        if (!"LOW".equals(level) && !"MEDIUM".equals(level) && !"HIGH".equals(level)) {
+            throw new BusinessException("无效的等级");
+        }
+        
+        String oldLevel = hazard.getLevel();
+        
+        // 更新等级
+        hazard.setLevel(level);
+        hazard.setUpdatedAt(LocalDateTime.now());
+        hazardMapper.updateById(hazard);
+        
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("UPDATE_LEVEL");
+        record.setContent("调整等级：" + oldLevel + " → " + level);
         hazardRecordMapper.insert(record);
     }
 }
