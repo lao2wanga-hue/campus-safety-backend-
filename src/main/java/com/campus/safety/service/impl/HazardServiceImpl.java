@@ -16,7 +16,6 @@ import com.campus.safety.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,8 @@ public class HazardServiceImpl implements HazardService {
     private final HazardRecordMapper hazardRecordMapper;
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
+    
+    // ========== 原有方法保持不变 ==========
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -70,6 +71,11 @@ public class HazardServiceImpl implements HazardService {
         Long userId = jwtUtil.getCurrentUserId();
         User user = userMapper.selectById(userId);
         
+        // ⭐ 权限验证
+        if (!"ADMIN".equals(user.getRole()) && !userId.equals(hazard.getReporterId())) {
+            throw new BusinessException("无权修改该隐患");
+        }
+        
         if (dto.getStatus() != null) {
             hazard.setStatus(dto.getStatus());
         }
@@ -96,11 +102,42 @@ public class HazardServiceImpl implements HazardService {
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void assign(Long id, Long handlerId) {
-        HazardUpdateDTO dto = new HazardUpdateDTO();
-        dto.setStatus("PROCESSING");
-        dto.setHandlerId(handlerId);
-        update(id, dto);
+        // ⭐ 权限验证 - 只有管理员可以分配
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+        
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new BusinessException("只有管理员可以分配隐患");
+        }
+        
+        // 验证维修员存在
+        User handler = userMapper.selectById(handlerId);
+        if (handler == null || !"RECTIFIER".equals(handler.getRole())) {
+            throw new BusinessException("无效的维修员");
+        }
+        
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        // 更新隐患
+        hazard.setStatus("PROCESSING");
+        hazard.setHandlerId(handlerId);
+        hazard.setHandlerName(handler.getRealName());
+        hazard.setUpdatedAt(LocalDateTime.now());
+        hazardMapper.updateById(hazard);
+        
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("ASSIGN");
+        record.setContent("分配给维修员：" + handler.getRealName());
+        hazardRecordMapper.insert(record);
     }
     
     @Override
@@ -168,5 +205,104 @@ public class HazardServiceImpl implements HazardService {
         wrapper.ne(Hazard::getStatus, "CLOSED");
         wrapper.orderByDesc(Hazard::getCreatedAt);
         return hazardMapper.selectList(wrapper);
+    }
+    
+    // ========== 新增方法 ==========
+    
+    /**
+     * ⭐ 获取维修员列表
+     */
+    @Override
+    public List<User> getRectifiers() {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getRole, "RECTIFIER");
+        return userMapper.selectList(wrapper);
+    }
+    
+    /**
+     * ⭐ 获取处理中的隐患列表
+     */
+    @Override
+    public List<Hazard> getProcessingHazards() {
+        LambdaQueryWrapper<Hazard> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Hazard::getStatus, "PROCESSING");
+        wrapper.orderByDesc(Hazard::getUpdatedAt);
+        return hazardMapper.selectList(wrapper);
+    }
+    
+    /**
+     * ⭐ 完成修理（维修员将 PROCESSING 转为 RESOLVED）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void completeRepair(Long id) {
+        // 验证权限
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+        
+        if (!"RECTIFIER".equals(currentUser.getRole())) {
+            throw new BusinessException("只有维修员可以完成修理");
+        }
+        
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        if (!"PROCESSING".equals(hazard.getStatus())) {
+            throw new BusinessException("隐患状态不正确");
+        }
+        
+        // 验证是当前维修员负责的
+        if (!currentUserId.equals(hazard.getHandlerId())) {
+            throw new BusinessException("只能完成自己负责的隐患");
+        }
+        
+        // 更新状态
+        hazard.setStatus("RESOLVED");
+        hazard.setResolution("修理完成");
+        hazard.setResolvedAt(LocalDateTime.now());
+        hazard.setUpdatedAt(LocalDateTime.now());
+        hazardMapper.updateById(hazard);
+        
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("COMPLETE");
+        record.setContent("完成修理");
+        hazardRecordMapper.insert(record);
+    }
+    
+    /**
+     * ⭐ 删除隐患（管理员权限）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteHazard(Long id) {
+        // 验证权限
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+        
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new BusinessException("只有管理员可以删除隐患");
+        }
+        
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        hazardMapper.deleteById(id);
+        
+        // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("DELETE");
+        record.setContent("删除隐患：" + hazard.getTitle());
+        hazardRecordMapper.insert(record);
     }
 }
