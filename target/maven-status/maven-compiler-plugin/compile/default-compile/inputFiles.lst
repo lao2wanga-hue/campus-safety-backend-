@@ -3,6 +3,7 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\SafetyApplication.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\exception\BusinessException.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\AssignDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\util\JwtUtil.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\controller\TempFixController.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\mapper\UserMapper.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\entity\User.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardLogDTO.java
@@ -15,6 +16,7 @@ E:\xiangmu\backend\src\main\java\com\campus\safety\controller\HazardController.j
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardReportDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\config\JwtConfig.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\LoginDTO.java
+E:\xiangmu\backend\src\main\java\com\campus\safety\dto\UserUpdateDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\dto\HazardDetailDTO.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\common\Result.java
 E:\xiangmu\backend\src\main\java\com\campus\safety\controller\UserController.java

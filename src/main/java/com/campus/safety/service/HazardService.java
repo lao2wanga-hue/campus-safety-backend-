@@ -27,14 +27,10 @@ public interface HazardService {
     void completeRepair(Long id);
     void deleteHazard(Long id);
     void updateLevel(Long id, String level);
-    
-    /**
-     * ⭐ 取消分配（将处理中隐患改回待处理）
-     */
     void cancelAssign(Long id);
     
     /**
-     * 上传图片
+     * ⭐ 上传图片（新增）
      */
     String uploadImage(MultipartFile file) throws Exception;
 }

@@ -6,7 +6,6 @@ import com.campus.safety.dto.HazardUpdateDTO;
 import com.campus.safety.entity.Hazard;
 import com.campus.safety.entity.User;
 import com.campus.safety.service.HazardService;
-import com.campus.safety.service.UserService;
 import com.campus.safety.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -23,8 +22,9 @@ import java.util.Map;
 public class HazardController {
     
     private final HazardService hazardService;
-    private final UserService userService;
     private final JwtUtil jwtUtil;
+    
+    // ⭐ 删除了 private final UserService userService; （未使用）
     
     @PostMapping
     public Result<Void> create(@RequestBody @Validated HazardDTO dto) {
@@ -53,9 +53,6 @@ public class HazardController {
         return Result.success();
     }
     
-    /**
-     * ⭐ 更新隐患等级（仅管理员）
-     */
     @PutMapping("/{id}/level")
     public Result<Void> updateLevel(@PathVariable Long id, @RequestBody Map<String, String> params) {
         String level = params.get("level");
@@ -66,6 +63,12 @@ public class HazardController {
     @RequestMapping("/{id}/assign")
     public Result<Void> assign(@PathVariable Long id, @RequestParam Long handlerId) {
         hazardService.assign(id, handlerId);
+        return Result.success();
+    }
+    
+    @RequestMapping("/{id}/cancel-assign")
+    public Result<Void> cancelAssign(@PathVariable Long id) {
+        hazardService.cancelAssign(id);
         return Result.success();
     }
     
@@ -106,54 +109,31 @@ public class HazardController {
         return Result.success(hazardService.getMyReports(userId));
     }
     
-    /**
-     * ⭐ 获取我的任务（维修员查看自己名下的隐患）
-     */
     @GetMapping("/my-tasks")
     public Result<List<Hazard>> getMyTasks() {
         Long userId = jwtUtil.getCurrentUserId();
         return Result.success(hazardService.getMyTasks(userId));
     }
     
-    /**
-     * ⭐ 获取维修员列表
-     */
     @GetMapping("/rectifiers")
     public Result<List<User>> getRectifiers() {
         return Result.success(hazardService.getRectifiers());
     }
     
-    /**
-     * ⭐ 获取处理中的隐患列表
-     */
     @GetMapping("/processing")
     public Result<List<Hazard>> getProcessingHazards() {
         return Result.success(hazardService.getProcessingHazards());
     }
     
-    /**
-     * ⭐ 完成修理（将 PROCESSING 转为 RESOLVED）
-     */
     @PostMapping("/{id}/complete")
     public Result<Void> completeRepair(@PathVariable Long id) {
         hazardService.completeRepair(id);
         return Result.success();
     }
     
-    /**
-     * ⭐ 删除隐患（管理员权限）
-     */
     @DeleteMapping("/{id}")
     public Result<Void> deleteHazard(@PathVariable Long id) {
         hazardService.deleteHazard(id);
-        return Result.success();
-    }
-    /**
- * ⭐ 取消分配（管理员将已分配隐患改回待处理）
- */
-    @PostMapping("/{id}/cancel-assign")
-    public Result<Void> cancelAssign(@PathVariable Long id) {
-        hazardService.cancelAssign(id);
         return Result.success();
     }
 }

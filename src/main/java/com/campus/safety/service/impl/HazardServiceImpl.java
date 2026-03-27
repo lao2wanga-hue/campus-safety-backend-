@@ -393,10 +393,10 @@ public class HazardServiceImpl implements HazardService {
     
         String oldHandlerName = hazard.getHandlerName();
     
-    // 取消分配 - 改回待处理状态
+    // ⭐ 取消分配 - 改回待处理状态，清除维修员信息
         hazard.setStatus("PENDING");
-        hazard.setHandlerId(null);
-        hazard.setHandlerName(null);
+        hazard.setHandlerId(null);        // ⭐ 清除 handlerId
+        hazard.setHandlerName(null);      // ⭐ 清除 handlerName
         hazard.setUpdatedAt(LocalDateTime.now());
         hazardMapper.updateById(hazard);
     
