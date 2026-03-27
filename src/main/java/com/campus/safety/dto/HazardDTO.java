@@ -19,5 +19,11 @@ public class HazardDTO {
     @NotNull(message = "隐患等级不能为空")
     private String level;
     
+    // ⭐ 图片（JSON 字符串或数组）
     private String images;
+    
+    // ⭐ 定位相关
+    private String area;
+    private Double latitude;
+    private Double longitude;
 }

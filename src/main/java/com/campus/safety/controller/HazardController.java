@@ -9,8 +9,10 @@ import com.campus.safety.service.HazardService;
 import com.campus.safety.service.UserService;
 import com.campus.safety.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +32,27 @@ public class HazardController {
         return Result.success();
     }
     
+    /**
+     * ⭐ 上传图片
+     */
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = hazardService.uploadImage(file);
+            Map<String, String> result = new HashMap<>();
+            result.put("url", imageUrl);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("上传失败：" + e.getMessage());
+        }
+    }
+    
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @RequestBody HazardUpdateDTO dto) {
         hazardService.update(id, dto);
         return Result.success();
     }
     
-    /**
-     * ⭐ 更新隐患等级（仅管理员）
-     */
     @PutMapping("/{id}/level")
     public Result<Void> updateLevel(@PathVariable Long id, @RequestBody Map<String, String> params) {
         String level = params.get("level");

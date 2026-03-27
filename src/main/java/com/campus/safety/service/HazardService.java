@@ -4,6 +4,7 @@ import com.campus.safety.dto.HazardDTO;
 import com.campus.safety.dto.HazardUpdateDTO;
 import com.campus.safety.entity.Hazard;
 import com.campus.safety.entity.User;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
@@ -20,14 +21,15 @@ public interface HazardService {
     List<Hazard> getMyReports(Long userId);
     List<Hazard> getMyTasks(Long userId);
     
-    // ⭐ 新增接口
+    // 新增接口
     List<User> getRectifiers();
     List<Hazard> getProcessingHazards();
     void completeRepair(Long id);
     void deleteHazard(Long id);
+    void updateLevel(Long id, String level);
     
     /**
-     * ⭐ 更新隐患等级（仅管理员）
+     * ⭐ 上传图片
      */
-    void updateLevel(Long id, String level);
+    String uploadImage(MultipartFile file) throws Exception;
 }

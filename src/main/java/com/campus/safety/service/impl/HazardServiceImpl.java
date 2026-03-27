@@ -14,12 +14,16 @@ import com.campus.safety.mapper.UserMapper;
 import com.campus.safety.service.HazardService;
 import com.campus.safety.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +34,9 @@ public class HazardServiceImpl implements HazardService {
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
     
-    // ========== 原有方法保持不变 ==========
+    // ⭐ 图片上传目录
+    @Value("${file.upload.path:./uploads}")
+    private String uploadPath;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -46,7 +52,14 @@ public class HazardServiceImpl implements HazardService {
         hazard.setStatus("PENDING");
         hazard.setReporterId(userId);
         hazard.setReporterName(user.getRealName());
+        
+        // ⭐ 处理图片
         hazard.setImages(dto.getImages());
+        
+        // ⭐ 处理定位信息
+        hazard.setArea(dto.getArea());
+        hazard.setLatitude(dto.getLatitude());
+        hazard.setLongitude(dto.getLongitude());
         
         hazardMapper.insert(hazard);
         
@@ -60,99 +73,45 @@ public class HazardServiceImpl implements HazardService {
         hazardRecordMapper.insert(record);
     }
     
+    /**
+     * ⭐ 上传图片
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void update(Long id, HazardUpdateDTO dto) {
-        Hazard hazard = hazardMapper.selectById(id);
-        if (hazard == null) {
-            throw new BusinessException("隐患不存在");
+    public String uploadImage(MultipartFile file) throws IOException {
+        // 验证文件
+        if (file.isEmpty()) {
+            throw new BusinessException("文件不能为空");
         }
         
-        Long userId = jwtUtil.getCurrentUserId();
-        User user = userMapper.selectById(userId);
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         
-        // ⭐ 权限验证
-        if (!"ADMIN".equals(user.getRole()) && !userId.equals(hazard.getReporterId())) {
-            throw new BusinessException("无权修改该隐患");
+        // 验证文件类型
+        List<String> allowedTypes = Arrays.asList(".jpg", ".jpeg", ".png", ".gif");
+        if (!allowedTypes.contains(extension.toLowerCase())) {
+            throw new BusinessException("只支持 jpg、png、gif 格式图片");
         }
         
-        if (dto.getStatus() != null) {
-            hazard.setStatus(dto.getStatus());
-        }
-        if (dto.getResolution() != null) {
-            hazard.setResolution(dto.getResolution());
-            hazard.setResolvedAt(LocalDateTime.now());
-        }
-        if (dto.getHandlerId() != null) {
-            hazard.setHandlerId(dto.getHandlerId());
-            User handler = userMapper.selectById(dto.getHandlerId());
-            hazard.setHandlerName(handler != null ? handler.getRealName() : null);
+        // 验证文件大小（最大 5MB）
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new BusinessException("图片大小不能超过 5MB");
         }
         
-        hazardMapper.updateById(hazard);
+        // 生成文件名
+        String filename = UUID.randomUUID().toString() + extension;
         
-        // 创建记录
-        HazardRecord record = new HazardRecord();
-        record.setHazardId(id);
-        record.setOperatorId(userId);
-        record.setOperatorName(user.getRealName());
-        record.setAction("UPDATE");
-        record.setContent("更新隐患状态");
-        hazardRecordMapper.insert(record);
-    }
-    
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void assign(Long id, Long handlerId) {
-        // ⭐ 权限验证 - 只有管理员可以分配
-        Long currentUserId = jwtUtil.getCurrentUserId();
-        User currentUser = userMapper.selectById(currentUserId);
-        
-        if (!"ADMIN".equals(currentUser.getRole())) {
-            throw new BusinessException("只有管理员可以分配隐患");
+        // 创建上传目录
+        Path uploadDir = Paths.get(uploadPath);
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
         }
         
-        // 验证维修员存在
-        User handler = userMapper.selectById(handlerId);
-        if (handler == null || !"RECTIFIER".equals(handler.getRole())) {
-            throw new BusinessException("无效的维修员");
-        }
+        // 保存文件
+        Path filePath = uploadDir.resolve(filename);
+        file.transferTo(filePath);
         
-        Hazard hazard = hazardMapper.selectById(id);
-        if (hazard == null) {
-            throw new BusinessException("隐患不存在");
-        }
-        
-        // 更新隐患
-        hazard.setStatus("PROCESSING");
-        hazard.setHandlerId(handlerId);
-        hazard.setHandlerName(handler.getRealName());
-        hazard.setUpdatedAt(LocalDateTime.now());
-        hazardMapper.updateById(hazard);
-        
-        // 创建记录
-        HazardRecord record = new HazardRecord();
-        record.setHazardId(id);
-        record.setOperatorId(currentUserId);
-        record.setOperatorName(currentUser.getRealName());
-        record.setAction("ASSIGN");
-        record.setContent("分配给维修员：" + handler.getRealName());
-        hazardRecordMapper.insert(record);
-    }
-    
-    @Override
-    public void resolve(Long id, String resolution) {
-        HazardUpdateDTO dto = new HazardUpdateDTO();
-        dto.setStatus("RESOLVED");
-        dto.setResolution(resolution);
-        update(id, dto);
-    }
-    
-    @Override
-    public void close(Long id) {
-        HazardUpdateDTO dto = new HazardUpdateDTO();
-        dto.setStatus("CLOSED");
-        update(id, dto);
+        // ⭐ 返回访问 URL
+        return "/api/hazard/images/" + filename;
     }
     
     @Override
@@ -176,6 +135,94 @@ public class HazardServiceImpl implements HazardService {
             return hazardMapper.selectPage(hazardPage, wrapper).getRecords();
         }
         return hazardMapper.selectList(wrapper);
+    }
+    
+    @Override
+    public void update(Long id, HazardUpdateDTO dto) {
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        Long userId = jwtUtil.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        
+        if (!"ADMIN".equals(user.getRole()) && !userId.equals(hazard.getReporterId())) {
+            throw new BusinessException("无权修改该隐患");
+        }
+        
+        if (dto.getStatus() != null) {
+            hazard.setStatus(dto.getStatus());
+        }
+        if (dto.getResolution() != null) {
+            hazard.setResolution(dto.getResolution());
+            hazard.setResolvedAt(LocalDateTime.now());
+        }
+        if (dto.getHandlerId() != null) {
+            hazard.setHandlerId(dto.getHandlerId());
+            User handler = userMapper.selectById(dto.getHandlerId());
+            hazard.setHandlerName(handler != null ? handler.getRealName() : null);
+        }
+        
+        hazardMapper.updateById(hazard);
+        
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(userId);
+        record.setOperatorName(user.getRealName());
+        record.setAction("UPDATE");
+        record.setContent("更新隐患状态");
+        hazardRecordMapper.insert(record);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void assign(Long id, Long handlerId) {
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+        
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new BusinessException("只有管理员可以分配隐患");
+        }
+        
+        User handler = userMapper.selectById(handlerId);
+        if (handler == null || !"RECTIFIER".equals(handler.getRole())) {
+            throw new BusinessException("无效的维修员");
+        }
+        
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+        
+        hazard.setStatus("PROCESSING");
+        hazard.setHandlerId(handlerId);
+        hazard.setHandlerName(handler.getRealName());
+        hazard.setUpdatedAt(LocalDateTime.now());
+        hazardMapper.updateById(hazard);
+        
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("ASSIGN");
+        record.setContent("分配给维修员：" + handler.getRealName());
+        hazardRecordMapper.insert(record);
+    }
+    
+    @Override
+    public void resolve(Long id, String resolution) {
+        HazardUpdateDTO dto = new HazardUpdateDTO();
+        dto.setStatus("RESOLVED");
+        dto.setResolution(resolution);
+        update(id, dto);
+    }
+    
+    @Override
+    public void close(Long id) {
+        HazardUpdateDTO dto = new HazardUpdateDTO();
+        dto.setStatus("CLOSED");
+        update(id, dto);
     }
     
     @Override
@@ -207,8 +254,6 @@ public class HazardServiceImpl implements HazardService {
         return hazardMapper.selectList(wrapper);
     }
     
-    // ========== 新增方法 ==========
-    
     @Override
     public List<User> getRectifiers() {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -227,7 +272,6 @@ public class HazardServiceImpl implements HazardService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void completeRepair(Long id) {
-        // 验证权限
         Long currentUserId = jwtUtil.getCurrentUserId();
         User currentUser = userMapper.selectById(currentUserId);
         
@@ -244,19 +288,16 @@ public class HazardServiceImpl implements HazardService {
             throw new BusinessException("隐患状态不正确");
         }
         
-        // 验证是当前维修员负责的
         if (!currentUserId.equals(hazard.getHandlerId())) {
             throw new BusinessException("只能完成自己负责的隐患");
         }
         
-        // 更新状态
         hazard.setStatus("RESOLVED");
         hazard.setResolution("修理完成");
         hazard.setResolvedAt(LocalDateTime.now());
         hazard.setUpdatedAt(LocalDateTime.now());
         hazardMapper.updateById(hazard);
         
-        // 创建记录
         HazardRecord record = new HazardRecord();
         record.setHazardId(id);
         record.setOperatorId(currentUserId);
@@ -269,7 +310,6 @@ public class HazardServiceImpl implements HazardService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteHazard(Long id) {
-        // 验证权限
         Long currentUserId = jwtUtil.getCurrentUserId();
         User currentUser = userMapper.selectById(currentUserId);
         
@@ -284,7 +324,6 @@ public class HazardServiceImpl implements HazardService {
         
         hazardMapper.deleteById(id);
         
-        // 创建记录
         HazardRecord record = new HazardRecord();
         record.setHazardId(id);
         record.setOperatorId(currentUserId);
@@ -294,13 +333,9 @@ public class HazardServiceImpl implements HazardService {
         hazardRecordMapper.insert(record);
     }
     
-    /**
-     * ⭐ 更新隐患等级（仅管理员）
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateLevel(Long id, String level) {
-        // ⭐ 权限验证 - 只有管理员可以调整等级
         Long currentUserId = jwtUtil.getCurrentUserId();
         User currentUser = userMapper.selectById(currentUserId);
         
@@ -308,25 +343,21 @@ public class HazardServiceImpl implements HazardService {
             throw new BusinessException("只有管理员可以调整隐患等级");
         }
         
-        // 验证隐患存在
         Hazard hazard = hazardMapper.selectById(id);
         if (hazard == null) {
             throw new BusinessException("隐患不存在");
         }
         
-        // 验证等级有效性
         if (!"LOW".equals(level) && !"MEDIUM".equals(level) && !"HIGH".equals(level)) {
             throw new BusinessException("无效的等级");
         }
         
         String oldLevel = hazard.getLevel();
         
-        // 更新等级
         hazard.setLevel(level);
         hazard.setUpdatedAt(LocalDateTime.now());
         hazardMapper.updateById(hazard);
         
-        // 创建记录
         HazardRecord record = new HazardRecord();
         record.setHazardId(id);
         record.setOperatorId(currentUserId);
