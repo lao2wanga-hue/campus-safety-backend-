@@ -53,6 +53,9 @@ public class HazardController {
         return Result.success();
     }
     
+    /**
+     * ⭐ 更新隐患等级（仅管理员）
+     */
     @PutMapping("/{id}/level")
     public Result<Void> updateLevel(@PathVariable Long id, @RequestBody Map<String, String> params) {
         String level = params.get("level");
@@ -103,28 +106,43 @@ public class HazardController {
         return Result.success(hazardService.getMyReports(userId));
     }
     
+    /**
+     * ⭐ 获取我的任务（维修员查看自己名下的隐患）
+     */
     @GetMapping("/my-tasks")
     public Result<List<Hazard>> getMyTasks() {
         Long userId = jwtUtil.getCurrentUserId();
         return Result.success(hazardService.getMyTasks(userId));
     }
     
+    /**
+     * ⭐ 获取维修员列表
+     */
     @GetMapping("/rectifiers")
     public Result<List<User>> getRectifiers() {
         return Result.success(hazardService.getRectifiers());
     }
     
+    /**
+     * ⭐ 获取处理中的隐患列表
+     */
     @GetMapping("/processing")
     public Result<List<Hazard>> getProcessingHazards() {
         return Result.success(hazardService.getProcessingHazards());
     }
     
+    /**
+     * ⭐ 完成修理（将 PROCESSING 转为 RESOLVED）
+     */
     @PostMapping("/{id}/complete")
     public Result<Void> completeRepair(@PathVariable Long id) {
         hazardService.completeRepair(id);
         return Result.success();
     }
     
+    /**
+     * ⭐ 删除隐患（管理员权限）
+     */
     @DeleteMapping("/{id}")
     public Result<Void> deleteHazard(@PathVariable Long id) {
         hazardService.deleteHazard(id);

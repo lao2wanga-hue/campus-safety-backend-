@@ -21,7 +21,7 @@ public interface HazardService {
     List<Hazard> getMyReports(Long userId);
     List<Hazard> getMyTasks(Long userId);
     
-    // 新增接口
+    // ⭐ 新增接口
     List<User> getRectifiers();
     List<Hazard> getProcessingHazards();
     void completeRepair(Long id);
