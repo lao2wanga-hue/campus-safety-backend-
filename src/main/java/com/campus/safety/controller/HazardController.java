@@ -148,4 +148,12 @@ public class HazardController {
         hazardService.deleteHazard(id);
         return Result.success();
     }
+    /**
+ * ⭐ 取消分配（管理员将已分配隐患改回待处理）
+ */
+    @PostMapping("/{id}/cancel-assign")
+    public Result<Void> cancelAssign(@PathVariable Long id) {
+        hazardService.cancelAssign(id);
+        return Result.success();
+    }
 }

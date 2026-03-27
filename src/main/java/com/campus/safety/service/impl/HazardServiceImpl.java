@@ -366,4 +366,47 @@ public class HazardServiceImpl implements HazardService {
         record.setContent("调整等级：" + oldLevel + " → " + level);
         hazardRecordMapper.insert(record);
     }
+/**
+ * ⭐ 取消分配（管理员将已分配隐患改回待处理）
+ */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelAssign(Long id) {
+    // 验证权限 - 只有管理员可以取消分配
+        Long currentUserId = jwtUtil.getCurrentUserId();
+        User currentUser = userMapper.selectById(currentUserId);
+    
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new BusinessException("只有管理员可以取消分配");
+        }
+    
+    // 验证隐患存在
+        Hazard hazard = hazardMapper.selectById(id);
+        if (hazard == null) {
+            throw new BusinessException("隐患不存在");
+        }
+    
+    // 验证隐患已分配
+        if (hazard.getHandlerId() == null) {
+            throw new BusinessException("该隐患未分配，无需取消");
+        }
+    
+        String oldHandlerName = hazard.getHandlerName();
+    
+    // 取消分配 - 改回待处理状态
+        hazard.setStatus("PENDING");
+        hazard.setHandlerId(null);
+        hazard.setHandlerName(null);
+        hazard.setUpdatedAt(LocalDateTime.now());
+        hazardMapper.updateById(hazard);
+    
+    // 创建记录
+        HazardRecord record = new HazardRecord();
+        record.setHazardId(id);
+        record.setOperatorId(currentUserId);
+        record.setOperatorName(currentUser.getRealName());
+        record.setAction("CANCEL_ASSIGN");
+        record.setContent("取消分配，原维修员：" + oldHandlerName);
+        hazardRecordMapper.insert(record);
+    }
 }

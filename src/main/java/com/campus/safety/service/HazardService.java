@@ -21,7 +21,7 @@ public interface HazardService {
     List<Hazard> getMyReports(Long userId);
     List<Hazard> getMyTasks(Long userId);
     
-    // ⭐ 新增接口
+    // 新增接口
     List<User> getRectifiers();
     List<Hazard> getProcessingHazards();
     void completeRepair(Long id);
@@ -29,7 +29,12 @@ public interface HazardService {
     void updateLevel(Long id, String level);
     
     /**
-     * ⭐ 上传图片
+     * ⭐ 取消分配（将处理中隐患改回待处理）
+     */
+    void cancelAssign(Long id);
+    
+    /**
+     * 上传图片
      */
     String uploadImage(MultipartFile file) throws Exception;
 }
