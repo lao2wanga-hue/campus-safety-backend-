@@ -2,14 +2,11 @@ package com.campus.safety.service;
 
 import com.campus.safety.dto.LoginDTO;
 import com.campus.safety.dto.RegisterDTO;
+import com.campus.safety.dto.UserUpdateDTO;
 import com.campus.safety.entity.User;
 import java.util.List;
 
-/**
- * 用户服务接口
- */
 public interface UserService {
-    
     /**
      * 用户登录
      */
@@ -34,4 +31,14 @@ public interface UserService {
      * 根据 ID 获取用户
      */
     User getById(Long id);
+    
+    /**
+     * ⭐ 更新用户
+     */
+    void updateUser(Long id, UserUpdateDTO dto);
+    
+    /**
+     * ⭐ 删除用户
+     */
+    void deleteUser(Long id);
 }
